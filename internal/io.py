@@ -4,20 +4,24 @@ from .azure_blob_storage import azure_blob_storage as abs
 import pandas as pd
 import logging
 import sqlite3
+import os
 
 
+# Create Logger
 logger = logging.getLogger()
 # Connecting to a SQLite database
 conn = sqlite3.connect(':memory:')
+# Initialize azure blob storage connector
+az = abs()
 
 
 def import_data(_params):
     # Load Data by file name from Azure blob storage
-    content = abs().load_csv(_params['from'])
+    content = az.read_csv(_params['from'])
 
     # Get blob data from Azure blob storage
     df = pd.read_csv(content)
-    logger.info('{0} by UTF8 is successfully loaded'.format(_params['from']))
+    logger.info('{0} is successfully read'.format(_params['from']))
 
     if _params['select']:
         # Extract Select definitions
@@ -37,6 +41,12 @@ def import_data(_params):
 
 
 def export_data(_params):
+    # Load data from database
     df = pd.read_sql_query('SELECT * FROM {0}'.format(_params['from']), conn)
-    print(df)
+    # Covert dataframe to pickle
+    df.to_pickle(_params['create'])
+    # Upload pickle to Azure blob storage
+    az.save(_params['create'])
+    # Delete local file
+    os.remove(_params['create'])
     return

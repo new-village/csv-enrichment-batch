@@ -53,7 +53,7 @@ class azure_blob_storage():
 
         return config
 
-    def load_csv(self, file_name):
+    def read_csv(self, file_name):
         # Get blob data from Azure blob storage
         try:
             blob = self.service.get_blob_to_text(self.container_name, file_name)
@@ -69,3 +69,8 @@ class azure_blob_storage():
         content = io.StringIO(blob.content)
 
         return content
+
+    def save(self, file_name):
+        self.service.create_blob_from_path(self.container_name, file_name, file_name)
+        logger.info('Upload file is successfully finished: ' + file_name)
+        return
