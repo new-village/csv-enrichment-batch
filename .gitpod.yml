@@ -11,3 +11,6 @@ tasks:
     command: |
       source .venv/bin/activate
       export PIP_USER=false
+vscode:
+  extensions:
+    - ms-python.python
