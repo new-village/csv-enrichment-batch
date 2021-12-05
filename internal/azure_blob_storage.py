@@ -3,6 +3,7 @@
 import logging
 import os
 import json
+import io
 
 from azure.common import AzureHttpError, AzureMissingResourceHttpError
 from azure.core.exceptions import ResourceExistsError
@@ -11,7 +12,7 @@ from azure.storage.blob import BlockBlobService
 logger = logging.getLogger()
 
 
-class abs():
+class azure_blob_storage():
     def __init__(self):
         # Application Define Variables: Container Name
         self.container_name = 'csv-enrichment-batch'
@@ -29,7 +30,7 @@ class abs():
         # Create Container
         try:
             self.service.create_container(self.container_name)
-            logger.info('Container "{0}" is successfully finished.'.format(self.container_name))
+            logger.info('Container "{0}" is successfully created.'.format(self.container_name))
         except AzureHttpError as e:
             logger.error('The container_name should be contain lower letters: ' + self.container_name)
             raise SystemExit(e)
@@ -56,13 +57,15 @@ class abs():
         # Get blob data from Azure blob storage
         try:
             blob = self.service.get_blob_to_text(self.container_name, file_name)
-            content = blob.content
-            logger.info('{0} is successfully loaded.'.format(file_name))
+            logger.info('{0} by UTF8 is successfully loaded'.format(file_name))
+        except UnicodeDecodeError:
+            blob = self.service.get_blob_to_text(self.container_name, file_name, encoding="cp932")
+            logger.info('{0} by CP932 is successfully loaded'.format(file_name))
         except AzureMissingResourceHttpError as e:
-            logger.error('There is no flow.json in Azure blob storage.')
+            logger.error('There is no {0} in Azure blob storage.'.format(file_name))
             raise SystemExit(e)
-        except KeyError as e:
-            logger.error('Invalid flow.json format.')
-            raise SystemExit(e)
+
+        # Convert BLOB to StringIO
+        content = io.StringIO(blob.content)
 
         return content

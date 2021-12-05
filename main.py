@@ -2,17 +2,16 @@
 """
 import logging
 import sys
-from internal import abs, input, output, query
+from internal import azure_blob_storage, import_data, export_data
 
-__all__ = ['abs', 'input', 'output', 'query']
+__all__ = ['azure_blob_storage', 'import_data', 'export_data']
 
 if __name__ == "__main__":
     # Load logger config & Set Logger
     logging.basicConfig(level='INFO', format='%(asctime)s [%(levelname)s] %(message)s')
     logger = logging.getLogger()
-
     # Load configuration file from Azure Blob Storage
-    flow = abs().load_config()
+    flow = azure_blob_storage().load_config()
 
     # Execute Flow
     for task in flow:

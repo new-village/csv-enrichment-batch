@@ -1,21 +1,42 @@
 """ io.py
 """
-from .abs import abs
-#import dataset
+from .azure_blob_storage import azure_blob_storage as abs
+import pandas as pd
+import logging
+import sqlite3
 
 
-def input(_p):
-    # connecting to a SQLite database
-    # db = dataset.connect('sqlite:///csv-enrichment-batch.db')
-    # table = db[_p['create']]
-
-    # Load Data
-    data = abs().load_csv(_p['from'])
-    print(data)
-    return "input"
+logger = logging.getLogger()
+# Connecting to a SQLite database
+conn = sqlite3.connect(':memory:')
 
 
-def output(data, params):
-    print(params['file'])
-    print(data)
-    return "output"
+def import_data(_params):
+    # Load Data by file name from Azure blob storage
+    content = abs().load_csv(_params['from'])
+
+    # Get blob data from Azure blob storage
+    df = pd.read_csv(content)
+    logger.info('{0} by UTF8 is successfully loaded'.format(_params['from']))
+
+    if _params['select']:
+        # Extract Select definitions
+        keys = _params['select'].keys()
+        names = [val['name'] for val in _params['select'].values()]
+        types = [val['type'] for val in _params['select'].values()]
+        # Select needed columns
+        df = df[keys]
+        # Change column names
+        df.rename(columns=dict(zip(keys, names)), inplace=True)
+        # Cast column type
+        df.astype(dict(zip(names, types)))
+
+    # Load dataframe to sqlite
+    df.to_sql(_params['create'], conn, index=False, if_exists='replace')
+    return
+
+
+def export_data(_params):
+    df = pd.read_sql_query('SELECT * FROM {0}'.format(_params['from']), conn)
+    print(df)
+    return
